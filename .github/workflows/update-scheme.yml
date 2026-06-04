@@ -1,0 +1,50 @@
+name: Update Color Scheme
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 06:00 UTC — switch to light scheme
+    - cron: '0 18 * * *'  # 18:00 UTC — switch to dark scheme
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  update-scheme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Generate page with current color scheme
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: go run ./cmd/generator
+
+      - name: Commit updated page if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          git diff --cached --quiet && echo "No changes." || \
+            git commit -m "chore: update color scheme [skip ci]"
+
+      - name: Push changes
+        run: git push
+
+      - name: Trigger publish workflow
+        uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26  # v1.3.2
+        with:
+          workflow: publish.yml
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,6 @@
+# Build output
+/generator
+/cmd/generator/generator
+
+# macOS
+.DS_Store
