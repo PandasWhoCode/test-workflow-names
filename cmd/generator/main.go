@@ -4,6 +4,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -164,143 +165,10 @@ func main() {
 	fmt.Printf("Generated %s (scheme: %s, %d workflows)\n", *output, *scheme, len(rows))
 }
 
-// pageTmpl is the HTML template for the static site.
-var pageTmpl = template.Must(template.New("page").Parse(`<!DOCTYPE html>
-<html lang="en" class="{{.Scheme}}">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Workflows — {{.Repo}}</title>
-  <style>
-    /* ── Light scheme ── */
-    html.light {
-      --bg:         #f6f8fa;
-      --surface:    #ffffff;
-      --surface2:   #f0f2f5;
-      --fg:         #1f2328;
-      --fg-muted:   #636c76;
-      --border:     #d0d7de;
-      --th-bg:      #eaeef2;
-      --row-even:   #f6f8fa;
-      --accent:     #0969da;
-    }
-    /* ── Dark scheme ── */
-    html.dark {
-      --bg:         #0d1117;
-      --surface:    #161b22;
-      --surface2:   #1c2128;
-      --fg:         #e6edf3;
-      --fg-muted:   #848d97;
-      --border:     #30363d;
-      --th-bg:      #21262d;
-      --row-even:   #1c2128;
-      --accent:     #58a6ff;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--fg);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      font-size: 1rem;
-      line-height: 1.5;
-      padding: 2.5rem 1.5rem;
-      max-width: 860px;
-      margin: 0 auto;
-      transition: background-color 0.25s ease, color 0.25s ease;
-    }
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-    .repo {
-      color: var(--fg-muted);
-      font-size: 0.9rem;
-      margin-bottom: 2rem;
-    }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    thead th {
-      background: var(--th-bg);
-      padding: 0.65rem 1rem;
-      text-align: left;
-      font-size: 0.825rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border);
-    }
-    thead th:last-child { text-align: right; }
-    tbody tr + tr td { border-top: 1px solid var(--border); }
-    tbody tr:nth-child(even) td { background: var(--row-even); }
-    td {
-      padding: 0.7rem 1rem;
-      font-size: 0.9rem;
-      vertical-align: middle;
-    }
-    td:first-child {
-      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-      font-size: 0.82rem;
-      color: var(--accent);
-    }
-    td:last-child {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      color: var(--fg-muted);
-    }
-    .empty { padding: 1.5rem; color: var(--fg-muted); text-align: center; }
-    .updated {
-      color: var(--fg-muted);
-      font-size: 0.78rem;
-      margin-top: 0.75rem;
-      text-align: right;
-    }
-  </style>
-  <script>
-    // Re-apply color scheme based on the visitor's current UTC time of day.
-    // Light: 06:00–17:59 UTC  |  Dark: 18:00–05:59 UTC
-    (function () {
-      var h = new Date().getUTCHours();
-      document.documentElement.className = (h >= 6 && h < 18) ? 'light' : 'dark';
-    }());
-  </script>
-</head>
-<body>
-  <h1>GitHub Actions Workflows</h1>
-  <p class="repo">{{.Repo}}</p>
-  <div class="card">
-    <table>
-      <thead>
-        <tr>
-          <th>File</th>
-          <th>Workflow Name</th>
-          <th>Runs</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{- if .Rows}}
-        {{- range .Rows}}
-        <tr>
-          <td>{{.Filename}}</td>
-          <td>{{.Name}}</td>
-          <td>{{.RunCount}}</td>
-        </tr>
-        {{- end}}
-        {{- else}}
-        <tr><td colspan="3" class="empty">No workflows found.</td></tr>
-        {{- end}}
-      </tbody>
-    </table>
-  </div>
-  <p class="updated">Last updated: {{.UpdatedAt}}</p>
-</body>
-</html>
-`))
+// pageTmplSrc holds the HTML template loaded from public/index.html.tmpl.
+//
+//go:embed public/index.html.tmpl
+var pageTmplSrc string
+
+// pageTmpl is the parsed HTML template for the static site.
+var pageTmpl = template.Must(template.New("page").Parse(pageTmplSrc))
